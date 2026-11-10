@@ -1,9 +1,6 @@
 # One-click Render deploy: Dashboard -> New -> Blueprint -> pick this repo.
-databases:
-  - name: medibook-db
-    plan: free
-    databaseName: medibook
-    user: medibook
+# Database: a free PostgreSQL from https://neon.tech (never expires).
+# Paste its connection string as DATABASE_URL when Render asks.
 
 services:
   - type: web
@@ -16,9 +13,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: DATABASE_URL
-        fromDatabase:
-          name: medibook-db
-          property: connectionString
+        sync: false
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: DJANGO_DEBUG
