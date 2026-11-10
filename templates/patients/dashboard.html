@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Patient Dashboard — MediBook{% endblock %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/patients_dashboard.css' %}">{% endblock %}
+{% block body %}
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🏥</div>
+    <span class="brand-name">MediBook</span>
+  </div>
+  <div class="topbar-right">
+    <a href="{% url 'patients:location' %}" class="location-pill">
+      📍 {{ location_label }}
+    </a>
+    <div class="pat-info">
+      <div class="name">{{ patient.name }}</div>
+      <div class="role">Patient</div>
+    </div>
+    <div class="pat-avatar">{{ patient.name|first|upper }}</div>
+    <a href="{% url 'accounts:logout' %}" class="logout-btn">Logout</a>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar">{{ patient.name|first|upper }}</div>
+      <div class="sidebar-name">{{ patient.name }}</div>
+      <div class="sidebar-loc">📍 {{ location_label }}</div>
+    </div>
+
+    <a class="nav-item {% if tab == 'profile' %}active{% endif %}" href="?tab=profile">
+      <span class="nav-icon">👤</span> My Profile
+    </a>
+    <a class="nav-item {% if tab == 'doctors' %}active{% endif %}" href="?tab=doctors">
+      <span class="nav-icon">🩺</span> Doctors & Clinics
+    </a>
+    <a class="nav-item {% if tab == 'appointments' %}active{% endif %}" href="?tab=appointments">
+      <span class="nav-icon">📅</span> My Appointments
+      {% if pending_appts %}
+        <span class="nav-badge">{{ pending_appts|length }}</span>
+      {% endif %}
+    </a>
+    <a class="nav-item" href="{% url 'patients:location' %}">
+      <span class="nav-icon">📍</span> Change Location
+    </a>
+    <a class="nav-item" href="{% url 'accounts:logout' %}">
+      <span class="nav-icon">🚪</span> Logout
+    </a>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ══════════════════════════ -->
+    <!--  MY PROFILE TAB           -->
+    <!-- ══════════════════════════ -->
+    <div class="tab-content {% if tab == 'profile' %}active{% endif %}">
+
+      <div class="page-header">
+        <h1>My Profile</h1>
+        <p>Your personal information and appointment summary</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon teal">📋</div>
+          <div>
+            <div class="stat-num">{{ total_appts }}</div>
+            <div class="stat-label">Total Booked</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">📅</div>
+          <div>
+            <div class="stat-num">{{ upcoming_appts|length }}</div>
+            <div class="stat-label">Upcoming</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">✅</div>
+          <div>
+            <div class="stat-num">{{ completed_count }}</div>
+            <div class="stat-label">Completed</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h3>👤 Personal Information</h3>
+        <div class="profile-grid">
+          <div class="profile-field">
+            <label>Full Name</label>
+            <input type="text" value="{{ patient.name }}" readonly>
+          </div>
+          <div class="profile-field">
+            <label>Email</label>
+            <input type="text" value="{{ patient.email }}" readonly>
+          </div>
+          <div class="profile-field">
+            <label>Phone</label>
+            <input type="text" value="{{ patient.phone }}" readonly>
+          </div>
+          <div class="profile-field">
+            <label>Location</label>
+            <input type="text" value="{{ location_full }}" readonly>
+          </div>
+          <div class="profile-field">
+            <label>Member Since</label>
+            <input type="text" value="{{ patient.date_joined|date:"d M Y" }}" readonly>
+          </div>
+          <div class="profile-field">
+            <label>Account Type</label>
+            <input type="text" value="Patient" readonly>
+          </div>
+        </div>
+        <a href="{% url 'patients:edit_profile' %}" class="btn-edit">✏️ Edit Profile</a>
+      </div>
+
+      <!-- Upcoming appointments preview -->
+      {% if upcoming_appts %}
+      <div class="section-card">
+        <h3>📅 Upcoming Appointments</h3>
+        <div class="appt-list">
+          {% for appt in upcoming_appts|slice:":3" %}
+          <div class="appt-card {{ appt.status }}">
+            <div class="appt-doc-avatar">{{ appt.doctor_name|first|upper }}</div>
+            <div class="appt-info">
+              <div class="appt-doc-name">Dr. {{ appt.doctor_name }}</div>
+              <div class="appt-spec">{{ appt.specialization|default:"" }}</div>
+              <div class="appt-clinic">🏥 {{ appt.clinic_name|default:"—" }}</div>
+            </div>
+            <div class="appt-datetime">
+              <div class="appt-date-val">📅 {{ appt.appointment_date|date:"d M Y" }}</div>
+              <div class="appt-time-val">🕐 {{ appt.time_slot|time:"h:i A" }}</div>
+            </div>
+            <span class="status-badge {{ appt.status }}">{{ appt.status|capfirst }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <a href="?tab=appointments" class="btn-edit" style="margin-top:16px">View All →</a>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- ══════════════════════════ -->
+    <!--  DOCTORS & CLINICS TAB    -->
+    <!-- ══════════════════════════ -->
+    <div class="tab-content {% if tab == 'doctors' %}active{% endif %}">
+
+      <div class="page-header">
+        <h1>Doctors & Clinics</h1>
+        <p>Showing doctors near <strong>{{ location_label }}</strong> — closest first</p>
+      </div>
+
+      <!-- Search & Filter -->
+      <div class="search-filter-bar">
+        <div class="search-wrap">
+          <span class="ico">🔍</span>
+          <input type="text" id="docSearch" placeholder="Search doctor name or clinic..."
+                 oninput="filterDoctors()">
+        </div>
+        <select class="spec-filter" id="specFilter" onchange="filterDoctors()">
+          <option value="">All Specializations</option>
+          <option>Cardiologist</option>
+          <option>Dermatologist</option>
+          <option>Neurologist</option>
+          <option>Orthopedic</option>
+          <option>Pediatrician</option>
+          <option>Psychiatrist</option>
+          <option>General Physician</option>
+          <option>Gynecologist</option>
+          <option>Ophthalmologist</option>
+          <option>ENT Specialist</option>
+        </select>
+      </div>
+
+      <!-- Doctor Cards -->
+      {% if not doctors %}
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <h4>No doctors found</h4>
+          <p>No doctors have registered in your area yet</p>
+        </div>
+      {% else %}
+        <div class="doctors-grid" id="doctorsGrid">
+          {% for doc in doctors %}
+          <div class="doctor-card {% if doc.dist_class == 'near' %}nearby{% endif %}"
+               data-name="{{ doc.name|lower }}"
+               data-clinic="{{ doc.clinic_name|lower }}"
+               data-spec="{{ doc.specialization|default:"" }}">
+
+            <div class="doc-card-top">
+              <div class="doc-avatar-card">{{ doc.name|first|upper }}</div>
+              <div class="doc-card-info">
+                <div class="doc-card-name">Dr. {{ doc.name }}</div>
+                <div class="doc-card-spec">{{ doc.specialization|default:"General" }}</div>
+                <div class="doc-card-exp">🏅 {{ doc.experience|default:"0" }} yrs experience</div>
+              </div>
+              <span class="distance-badge {{ doc.dist_class }}">{{ doc.dist_label }}</span>
+            </div>
+
+            <div class="doc-card-details">
+              {% if doc.clinic_name %}
+              <div class="doc-detail-row">
+                🏥 <strong>{{ doc.clinic_name }}</strong>
+              </div>
+              {% endif %}
+              {% if doc.clinic_address %}
+              <div class="doc-detail-row">
+                📍 {{ doc.clinic_address }}
+              </div>
+              {% endif %}
+              <div class="doc-detail-row">
+                🕐
+                {% if doc.today_timing %}
+                  Today: <strong>{{ doc.today_timing }}</strong>
+                {% else %}
+                  <span class="no-timing">Closed today</span>
+                {% endif %}
+              </div>
+              {% if doc.clinic_desc %}
+              <div class="doc-detail-row" style="margin-top:4px;font-style:italic;color:var(--gray)">
+                "{{ doc.clinic_desc|truncatechars:81 }}"
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="doc-card-footer">
+              <div class="doc-fee">
+                ₹{{ doc.fees|floatformat:"0g" }}
+                <span>/ visit</span>
+              </div>
+              <a href="{% url 'patients:book_appointment' doc.id %}" class="btn-book">
+                Book Now →
+              </a>
+            </div>
+
+          </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+    </div>
+
+    <!-- ══════════════════════════ -->
+    <!--  MY APPOINTMENTS TAB      -->
+    <!-- ══════════════════════════ -->
+    <div class="tab-content {% if tab == 'appointments' %}active{% endif %}">
+
+      <div class="page-header">
+        <h1>My Appointments</h1>
+        <p>Track all your booked appointments</p>
+      </div>
+
+      <div class="appt-filters">
+        <div class="filter-btn active" onclick="filterAppts('all',this)">All ({{ total_appts }})</div>
+        <div class="filter-btn" onclick="filterAppts('pending',this)">⏳ Pending</div>
+        <div class="filter-btn" onclick="filterAppts('confirmed',this)">✅ Confirmed</div>
+        <div class="filter-btn" onclick="filterAppts('completed',this)">🏁 Completed</div>
+        <div class="filter-btn" onclick="filterAppts('cancelled',this)">❌ Cancelled</div>
+      </div>
+
+      {% if not appointments %}
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <h4>No appointments yet</h4>
+          <p>Browse doctors and book your first appointment!</p>
+          <a href="?tab=doctors" class="btn-edit" style="margin-top:16px;display:inline-flex">Find Doctors →</a>
+        </div>
+      {% else %}
+        <div class="appt-list" id="apptList">
+          {% for appt in appointments %}
+          <div class="appt-card {{ appt.status }}" data-status="{{ appt.status }}">
+            <div class="appt-doc-avatar">{{ appt.doctor_name|first|upper }}</div>
+            <div class="appt-info">
+              <div class="appt-doc-name">Dr. {{ appt.doctor_name }}</div>
+              <div class="appt-spec">{{ appt.specialization|default:"" }}</div>
+              <div class="appt-clinic">🏥 {{ appt.clinic_name|default:"—" }}</div>
+              {% if appt.clinic_address %}
+              <div class="appt-clinic">📍 {{ appt.clinic_address }}</div>
+              {% endif %}
+            </div>
+            <div class="appt-datetime">
+              <div class="appt-date-val">📅 {{ appt.appointment_date|date:"d M Y" }}</div>
+              <div class="appt-time-val">🕐 {{ appt.time_slot|time:"h:i A" }}</div>
+              {% if appt.reason %}
+              <div class="appt-time-val" style="margin-top:4px">📝 {{ appt.reason }}</div>
+              {% endif %}
+            </div>
+            <span class="status-badge {{ appt.status }}">{{ appt.status|capfirst }}</span>
+            {% if appt.status == 'pending' or appt.status == 'confirmed' %}
+            <form method="POST" action="{% url 'patients:cancel_appointment' appt.id %}">{% csrf_token %}
+              <input type="hidden" name="appt_id" value="{{ appt.id }}">
+              <button type="submit" name="cancel_appt" class="btn-cancel"
+                      onclick="return confirm('Cancel this appointment?')">Cancel</button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Filter appointments
+  function filterAppts(status, btn) {
+    document.querySelectorAll('.appt-filters .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#apptList .appt-card').forEach(card => {
+      card.style.display = (status === 'all' || card.dataset.status === status) ? '' : 'none';
+    });
+  }
+
+  // Search + filter doctors
+  function filterDoctors() {
+    const search = document.getElementById('docSearch').value.toLowerCase();
+    const spec   = document.getElementById('specFilter').value.toLowerCase();
+    document.querySelectorAll('.doctor-card').forEach(card => {
+      const name   = card.dataset.name   || '';
+      const clinic = card.dataset.clinic || '';
+      const cardSpec = card.dataset.spec.toLowerCase();
+      const matchSearch = !search || name.includes(search) || clinic.includes(search);
+      const matchSpec   = !spec   || cardSpec === spec;
+      card.style.display = (matchSearch && matchSpec) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}

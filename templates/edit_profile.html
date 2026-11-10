@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Edit Profile — MediBook{% endblock %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/doctors_clinic_details.css' %}"><link rel="stylesheet" href="{% static 'css/extra.css' %}">{% endblock %}
+{% block body %}
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🏥</div>
+    <span class="brand-name">MediBook</span>
+  </div>
+  <div class="user-greet"><span>{{ greeting }}</span></div>
+</div>
+
+<div class="main">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">✏️</div>
+      <div>
+        <h2>Edit Profile</h2>
+        <p>Update your personal details.</p>
+      </div>
+    </div>
+
+    {% if error %}<div class="alert-error">⚠️ {{ error }}</div>{% endif %}
+
+    <form method="POST">{% csrf_token %}
+      <div class="form-grid-2">
+        {% for form in forms %}{% for field in form %}
+        <div class="form-group{% if field.name == 'bio' %} full{% endif %}">
+          <label class="field-label">{{ field.label }}</label>
+          <div class="field-input">{{ field }}</div>
+        </div>
+        {% endfor %}{% endfor %}
+      </div>
+      <button type="submit" class="btn-primary">Save Changes</button>
+    </form>
+    <a class="back-link" href="{% url back_url %}">← Back to dashboard</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Login — MediBook{% endblock %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/accounts_login.css' %}">{% endblock %}
+{% block body %}
+
+<!-- LEFT PANEL -->
+<div class="left">
+  <div class="brand">
+    <div class="brand-icon">🏥</div>
+    <span class="brand-name">MediBook</span>
+  </div>
+
+  <div class="left-content">
+    <h1>Your health,<br><em>our priority.</em></h1>
+    <p>Connect with top doctors, book appointments in minutes, and manage your healthcare — all in one place.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <h3>500+</h3>
+      <p>Verified Doctors</p>
+    </div>
+    <div class="stat">
+      <h3>20k+</h3>
+      <p>Appointments</p>
+    </div>
+    <div class="stat">
+      <h3>50+</h3>
+      <p>Specializations</p>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right">
+  <div class="form-box">
+    <h2>Welcome back</h2>
+    <p>Don't have an account? <a href="{% url 'accounts:register' %}">Sign up free</a></p>
+
+    {% if error %}
+      <div class="alert-error">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="">{% csrf_token %}
+
+      <!-- Role Selector -->
+      <div class="role-tabs">
+        <div class="role-tab active" onclick="setRole('patient', this)">
+          <span>🧑‍⚕️</span> Patient
+        </div>
+        <div class="role-tab" onclick="setRole('doctor', this)">
+          <span>👨‍⚕️</span> Doctor
+        </div>
+        <div class="role-tab" onclick="setRole('admin', this)">
+          <span>🛡️</span> Admin
+        </div>
+      </div>
+      <input type="hidden" name="role" id="roleInput" value="patient">
+      <input type="hidden" name="next" value="{{ next }}">
+
+      <!-- Email -->
+      <div class="form-group">
+        <label>Email Address</label>
+        <div class="input-wrap">
+          <span class="icon">✉️</span>
+          <input type="email" name="email" placeholder="you@example.com"
+                 value="{{ email }}" required>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label>Password</label>
+        <div class="input-wrap">
+          <span class="icon">🔒</span>
+          <input type="password" name="password" id="passInput" placeholder="Enter your password" required>
+          <span class="toggle-pass" onclick="togglePass()">👁️</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary">Sign In →</button>
+    </form>
+
+    <div class="register-link">
+      New to MediBook? <a href="{% url 'accounts:register' %}">Create an account</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function setRole(role, el) {
+    document.getElementById('roleInput').value = role;
+    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function togglePass() {
+    const inp = document.getElementById('passInput');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+</script>
+{% endblock %}

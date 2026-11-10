@@ -1,0 +1,29 @@
+# One-click Render deploy: Dashboard -> New -> Blueprint -> pick this repo.
+databases:
+  - name: medibook-db
+    plan: free
+    databaseName: medibook
+    user: medibook
+
+services:
+  - type: web
+    name: medibook
+    runtime: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: gunicorn medibook.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DATABASE_URL
+        fromDatabase:
+          name: medibook-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        value: "https://*.onrender.com"

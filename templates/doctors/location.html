@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Select Clinic Location — MediBook{% endblock %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/doctors_location.css' %}">{% endblock %}
+{% block body %}
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🏥</div>
+    <span class="brand-name">MediBook</span>
+  </div>
+  <div class="user-greet">
+    Welcome, Dr. <span>{{ user.name }}</span> 👨‍⚕️
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step">
+      <div class="step-circle done">✓</div>
+      <span class="step-label">Account Created</span>
+    </div>
+    <div class="step-line done"></div>
+    <div class="step">
+      <div class="step-circle active">2</div>
+      <span class="step-label">Clinic Location</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-circle inactive">3</div>
+      <span class="step-label inactive">Choose Plan</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-circle inactive">4</div>
+      <span class="step-label inactive">Go Live</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">🏥</div>
+      <div>
+        <h2>Where is your clinic?</h2>
+        <p>Patients search for doctors by location. Setting your clinic location helps them find you easily.</p>
+      </div>
+    </div>
+
+    <div class="info-banner">
+      💡 Your clinic location will be shown on your public profile. Patients near your area will see you first in search results.
+    </div>
+
+    <form method="POST" action="" id="locationForm">{% csrf_token %}
+      <input type="hidden" name="city" id="cityInput" value="">
+      <input type="hidden" name="area" id="areaInput" value="">
+
+      <!-- City Grid -->
+      <div class="section-label">Select Your City</div>
+      <div class="city-grid">
+        <div class="city-card" onclick="selectCity('Mumbai', '🏙️', this)">
+          <span class="city-emoji">🏙️</span>
+          <div class="city-name">Mumbai</div>
+          <div class="city-patients">2.1k+ Patients</div>
+        </div>
+        <div class="city-card" onclick="selectCity('Pune', '🌿', this)">
+          <span class="city-emoji">🌿</span>
+          <div class="city-name">Pune</div>
+          <div class="city-patients">1.4k+ Patients</div>
+        </div>
+        <div class="city-card" onclick="selectCity('Delhi', '🏛️', this)">
+          <span class="city-emoji">🏛️</span>
+          <div class="city-name">Delhi</div>
+          <div class="city-patients">3.2k+ Patients</div>
+        </div>
+        <div class="city-card" onclick="selectCity('Bangalore', '💻', this)">
+          <span class="city-emoji">💻</span>
+          <div class="city-name">Bangalore</div>
+          <div class="city-patients">1.8k+ Patients</div>
+        </div>
+        <div class="city-card" onclick="selectCity('Chennai', '🌊', this)">
+          <span class="city-emoji">🌊</span>
+          <div class="city-name">Chennai</div>
+          <div class="city-patients">1.1k+ Patients</div>
+        </div>
+        <div class="city-card" onclick="selectCity('Hyderabad', '🕌', this)">
+          <span class="city-emoji">🕌</span>
+          <div class="city-name">Hyderabad</div>
+          <div class="city-patients">1.5k+ Patients</div>
+        </div>
+      </div>
+
+      <!-- OR type city -->
+      <div class="divider"><span>OR type your city</span></div>
+
+      <div class="search-wrap">
+        <span class="ico">🔍</span>
+        <input type="text" id="citySearch" placeholder="e.g. Nagpur, Nashik, Kolkata..."
+               oninput="handleSearch(this.value)">
+      </div>
+
+      <!-- Area chips -->
+      <div class="area-section" id="areaSection">
+        <div class="section-label" style="margin-bottom:10px">Select Area / Locality</div>
+        <div class="area-chips" id="areaChips"></div>
+      </div>
+
+      <!-- Selected display -->
+      <div class="selected-display" id="selectedDisplay">
+        <span>📍</span>
+        <span id="selectedText"></span>
+        <span style="margin-left:auto;font-size:0.78rem;opacity:0.7">Your clinic location</span>
+      </div>
+
+      <button type="submit" class="btn-primary" id="submitBtn">
+        Set Clinic Location & Continue →
+      </button>
+    </form>
+
+    <div class="skip-link">
+      <a onclick="skipLocation()">Skip for now, set location later from dashboard</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const cityAreas = {
+    'Mumbai':    ['Andheri', 'Bandra', 'Dadar', 'Borivali', 'Thane', 'Navi Mumbai', 'Mulund', 'Kurla'],
+    'Pune':      ['Kothrud', 'Hadapsar', 'Shivajinagar', 'Wakad', 'Hinjewadi', 'Baner', 'Aundh', 'Viman Nagar'],
+    'Delhi':     ['Connaught Place', 'Dwarka', 'Rohini', 'Lajpat Nagar', 'Saket', 'Noida', 'Gurgaon', 'Vasant Kunj'],
+    'Bangalore': ['Koramangala', 'Indiranagar', 'Whitefield', 'HSR Layout', 'JP Nagar', 'Marathahalli', 'Jayanagar', 'Malleshwaram'],
+    'Chennai':   ['T. Nagar', 'Anna Nagar', 'Adyar', 'Velachery', 'Porur', 'Tambaram', 'Nungambakkam', 'Mylapore'],
+    'Hyderabad': ['Banjara Hills', 'Jubilee Hills', 'Hitech City', 'Kondapur', 'Secunderabad', 'Uppal', 'Madhapur', 'Kukatpally'],
+  };
+
+  let selectedCity = '';
+  let selectedArea = '';
+
+  function selectCity(city, emoji, el) {
+    document.querySelectorAll('.city-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('citySearch').value = '';
+    selectedCity = city;
+    selectedArea = '';
+    document.getElementById('cityInput').value = city;
+    document.getElementById('areaInput').value = '';
+    showAreas(city);
+    updateDisplay();
+  }
+
+  function handleSearch(val) {
+    document.querySelectorAll('.city-card').forEach(c => c.classList.remove('selected'));
+    if (val.trim().length >= 2) {
+      selectedCity = val.trim();
+      document.getElementById('cityInput').value = selectedCity;
+      selectedArea = '';
+      document.getElementById('areaInput').value = '';
+      const match = Object.keys(cityAreas).find(c => c.toLowerCase() === val.toLowerCase());
+      if (match) {
+        selectedCity = match;
+        document.getElementById('cityInput').value = match;
+        showAreas(match);
+      } else {
+        document.getElementById('areaSection').classList.remove('show');
+      }
+      updateDisplay();
+    } else {
+      selectedCity = '';
+      document.getElementById('cityInput').value = '';
+      document.getElementById('areaSection').classList.remove('show');
+      updateDisplay();
+    }
+  }
+
+  function showAreas(city) {
+    const areas = cityAreas[city] || [];
+    const section = document.getElementById('areaSection');
+    const chips   = document.getElementById('areaChips');
+    if (!areas.length) { section.classList.remove('show'); return; }
+    chips.innerHTML = areas.map(a =>
+      `<div class="chip" onclick="selectArea('${a}', this)">${a}</div>`
+    ).join('');
+    section.classList.add('show');
+  }
+
+  function selectArea(area, el) {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedArea = area;
+    document.getElementById('areaInput').value = area;
+    updateDisplay();
+  }
+
+  function updateDisplay() {
+    const display = document.getElementById('selectedDisplay');
+    const text    = document.getElementById('selectedText');
+    const btn     = document.getElementById('submitBtn');
+    if (selectedCity) {
+      text.textContent = selectedArea ? `${selectedArea}, ${selectedCity}` : selectedCity;
+      display.classList.add('show');
+      btn.classList.add('ready');
+    } else {
+      display.classList.remove('show');
+      btn.classList.remove('ready');
+    }
+  }
+
+  function skipLocation() {
+    document.getElementById('cityInput').value = 'All';
+    document.getElementById('locationForm').submit();
+  }
+</script>
+{% endblock %}

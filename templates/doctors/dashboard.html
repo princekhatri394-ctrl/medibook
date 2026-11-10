@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Doctor Dashboard — MediBook{% endblock %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/doctors_dashboard.css' %}">{% endblock %}
+{% block body %}
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🏥</div>
+    <span class="brand-name">MediBook</span>
+  </div>
+  <div class="topbar-right">
+    <div class="doc-info">
+      <div class="name">Dr. {{ doctor.name }}</div>
+      <div class="role">{{ doctor.specialization|default:"Doctor" }}</div>
+    </div>
+    <div class="doc-avatar">{{ doctor.name|first|upper }}</div>
+    <a href="{% url 'accounts:logout' %}" class="logout-btn">Logout</a>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar">{{ doctor.name|first|upper }}</div>
+      <div class="sidebar-name">Dr. {{ doctor.name }}</div>
+      <div class="sidebar-spec">{{ doctor.specialization|default:"—" }}</div>
+      <span class="plan-badge {% if subscription %}{{ subscription.plan.plan_name|lower }}{% else %}basic{% endif %}">{% if subscription %}{{ subscription.plan.plan_name }}{% else %}Basic{% endif %} Plan</span>
+    </div>
+
+    <a class="nav-item {% if tab == 'profile' %}active{% endif %}" href="?tab=profile">
+      <span class="nav-icon">👤</span> My Profile
+    </a>
+    <a class="nav-item {% if tab == 'appointments' %}active{% endif %}" href="?tab=appointments">
+      <span class="nav-icon">📅</span> Appointments
+      {% if pending_appts %}
+        <span class="nav-badge">{{ pending_appts|length }}</span>
+      {% endif %}
+    </a>
+    <a class="nav-item" href="{% url 'doctors:clinic_details' %}">
+      <span class="nav-icon">🏥</span> Edit Clinic
+    </a>
+    <a class="nav-item" href="{% url 'doctors:select_plan' %}">
+      <span class="nav-icon">💳</span> Subscription
+    </a>
+    <a class="nav-item" href="{% url 'accounts:logout' %}">
+      <span class="nav-icon">🚪</span> Logout
+    </a>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ══════════════════════════ -->
+    <!--  MY PROFILE TAB           -->
+    <!-- ══════════════════════════ -->
+    <div class="tab-content {% if tab == 'profile' %}active{% endif %}">
+
+      <div class="page-header">
+        <h1>My Profile</h1>
+        <p>View and manage your personal and clinic information</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon teal">📅</div>
+          <div>
+            <div class="stat-num">{{ total_appts }}</div>
+            <div class="stat-label">Total Appointments</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">🕐</div>
+          <div>
+            <div class="stat-num">{{ today_appts|length }}</div>
+            <div class="stat-label">Today's Appointments</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">⏳</div>
+          <div>
+            <div class="stat-num">{{ pending_appts|length }}</div>
+            <div class="stat-label">Pending</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">✅</div>
+          <div>
+            <div class="stat-num">{{ completed_appts|length }}</div>
+            <div class="stat-label">Completed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personal Info -->
+      <div class="section-card">
+        <h3>👤 Personal Information</h3>
+        <div class="profile-grid">
+          <div class="profile-field">
+            <label>Full Name</label>
+            <input type="text" value="Dr. {{ doctor.name }}" readonly>
+          </div>
+          <div class="profile-field">
+            <label>Email</label>
+            <input type="text" value="{{ doctor.email }}" readonly>
+          </div>
+          <div class="profile-field">
+            <label>Phone</label>
+            <input type="text" value="{{ doctor.phone }}" readonly>
+          </div>
+          <div class="profile-field">
+            <label>Specialization</label>
+            <input type="text" value="{{ doctor.specialization|default:"—" }}" readonly>
+          </div>
+          <div class="profile-field">
+            <label>Experience</label>
+            <input type="text" value="{{ doctor.experience|default:"0" }} years" readonly>
+          </div>
+          <div class="profile-field">
+            <label>Consultation Fee</label>
+            <input type="text" value="₹{{ doctor.fees|default:"0" }}" readonly>
+          </div>
+        </div>
+        <a href="{% url 'doctors:edit_profile' %}" class="btn-edit">✏️ Edit Profile</a>
+      </div>
+
+      <!-- Clinic Info -->
+      <div class="section-card">
+        <h3>🏥 Clinic Information</h3>
+        <div class="profile-grid">
+          <div class="profile-field">
+            <label>Clinic Name</label>
+            <input type="text" value="{{ doctor.clinic_name|default:"—" }}" readonly>
+          </div>
+          <div class="profile-field">
+            <label>Location</label>
+            <input type="text" value="{{ doctor.clinic_area }}{% if doctor.clinic_area and doctor.clinic_city %}, {% endif %}{{ doctor.clinic_city|default:'—' }}" readonly>
+          </div>
+          <div class="profile-field profile-field-full">
+            <label>Address</label>
+            <input type="text" value="{{ doctor.clinic_address|default:"—" }}" readonly>
+          </div>
+          {% if doctor.clinic_desc %}
+          <div class="profile-field profile-field-full">
+            <label>Description</label>
+            <textarea readonly>{{ doctor.clinic_desc }}</textarea>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Timings -->
+        {% if timings %}
+        <div style="margin-top:20px">
+          <label style="font-size:0.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:10px">Office Timings</label>
+          <div class="timing-grid">
+            {% for key, value in doctor.timing_rows %}
+              {% if value %}<div class="timing-chip">📅 {{ key }}: {{ value }}</div>
+              {% else %}<div class="timing-chip closed">❌ {{ key }}: Closed</div>{% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <a href="{% url 'doctors:clinic_details' %}" class="btn-edit">✏️ Edit Clinic Details</a>
+      </div>
+
+      <!-- Subscription -->
+      <div class="section-card">
+        <h3>💳 Current Subscription</h3>
+        {% if subscription %}
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <span class="plan-badge {{ subscription.plan.plan_name|lower }}" style="font-size:0.85rem;padding:6px 18px">
+              {{ subscription.plan.plan_name }} Plan
+            </span>
+            <span style="font-size:0.88rem;color:var(--gray)">
+              Valid till: <strong style="color:var(--navy)">{{ subscription.end_date|date:"d M Y" }}</strong>
+            </span>
+            <a href="{% url 'doctors:select_plan' %}" class="btn-edit" style="margin-top:0;padding:8px 18px">Upgrade Plan</a>
+          </div>
+        {% else %}
+          <p style="color:var(--gray);font-size:0.9rem;margin-bottom:14px">You are on the Free Basic plan.</p>
+          <a href="{% url 'doctors:select_plan' %}" class="btn-edit" style="margin-top:0">Upgrade to Premium →</a>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════ -->
+    <!--  APPOINTMENTS TAB         -->
+    <!-- ══════════════════════════ -->
+    <div class="tab-content {% if tab == 'appointments' %}active{% endif %}">
+
+      <div class="page-header">
+        <h1>Appointments</h1>
+        <p>View and manage all your patient appointments</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon teal">📋</div>
+          <div>
+            <div class="stat-num">{{ total_appts }}</div>
+            <div class="stat-label">Total</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">🕐</div>
+          <div>
+            <div class="stat-num">{{ today_appts|length }}</div>
+            <div class="stat-label">Today</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">⏳</div>
+          <div>
+            <div class="stat-num">{{ pending_appts|length }}</div>
+            <div class="stat-label">Pending</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">✅</div>
+          <div>
+            <div class="stat-num">{{ completed_appts|length }}</div>
+            <div class="stat-label">Completed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="appt-filters">
+        <div class="filter-btn active" onclick="filterAppts('all', this)">All ({{ total_appts }})</div>
+        <div class="filter-btn" onclick="filterAppts('pending', this)">⏳ Pending ({{ pending_appts|length }})</div>
+        <div class="filter-btn" onclick="filterAppts('confirmed', this)">✅ Confirmed</div>
+        <div class="filter-btn" onclick="filterAppts('completed', this)">🏁 Completed</div>
+        <div class="filter-btn" onclick="filterAppts('cancelled', this)">❌ Cancelled</div>
+      </div>
+
+      <!-- Table -->
+      <div class="section-card" style="padding:0;overflow:hidden">
+        {% if not appointments %}
+          <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h4>No appointments yet</h4>
+            <p>Patients will appear here once they book with you</p>
+          </div>
+        {% else %}
+          <table class="appt-table" id="apptTable">
+            <thead>
+              <tr>
+                <th style="padding-left:24px">#</th>
+                <th>Patient</th>
+                <th>Date & Time</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appt in appointments %}
+              <tr class="appt-row" data-status="{{ appt.status }}">
+                <td style="padding-left:24px;color:var(--gray);font-size:0.8rem">{{ forloop.counter }}</td>
+                <td>
+                  <div class="patient-name">{{ appt.patient_name }}</div>
+                  <div class="patient-contact">📱 {{ appt.patient_phone }}</div>
+                  <div class="patient-contact">✉️ {{ appt.patient_email }}</div>
+                </td>
+                <td>
+                  <div class="appt-date">📅 {{ appt.appointment_date|date:"d M Y" }}</div>
+                  <div class="appt-time">🕐 {{ appt.time_slot|time:"h:i A" }}</div>
+                </td>
+                <td style="font-size:0.85rem;color:var(--navy);max-width:160px">
+                  {{ appt.reason|default:'—' }}
+                </td>
+                <td>
+                  <span class="status-badge {{ appt.status }}">
+                    {{ appt.status|capfirst }}
+                  </span>
+                </td>
+                <td>
+                  <form method="POST" action="{% url 'doctors:update_status' appt.id %}" style="display:flex;gap:6px;align-items:center">{% csrf_token %}
+                    <input type="hidden" name="appt_id" value="{{ appt.id }}">
+                    <select name="new_status" class="action-select">
+                      <option value="pending"   {% if appt.status == 'pending' %}selected{% endif %}>Pending</option>
+                      <option value="confirmed" {% if appt.status == 'confirmed' %}selected{% endif %}>Confirm</option>
+                      <option value="completed" {% if appt.status == 'completed' %}selected{% endif %}>Complete</option>
+                      <option value="cancelled" {% if appt.status == 'cancelled' %}selected{% endif %}>Cancel</option>
+                    </select>
+                    <button type="submit" name="update_status" class="btn-update">Save</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function filterAppts(status, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.appt-row').forEach(row => {
+      row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}

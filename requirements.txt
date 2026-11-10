@@ -1,0 +1,7 @@
+Django>=4.2,<5.0
+whitenoise>=6.6,<7          # serves CSS files in production
+gunicorn>=22,<24            # production web server (Linux hosts)
+dj-database-url>=2.1,<3     # reads DATABASE_URL on hosting platforms
+psycopg[binary]>=3.1,<3.3   # PostgreSQL driver (Render/Railway databases)
+# Only needed for MySQL/MariaDB (DB_ENGINE=mysql or a mysql:// DATABASE_URL):
+# mysqlclient>=2.2

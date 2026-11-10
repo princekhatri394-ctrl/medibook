@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Choose Plan — MediBook{% endblock %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/doctors_clinic_details.css' %}"><link rel="stylesheet" href="{% static 'css/extra.css' %}">{% endblock %}
+{% block body %}
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🏥</div>
+    <span class="brand-name">MediBook</span>
+  </div>
+  <div class="user-greet">Dr. <span>{{ user.name }}</span> 👨‍⚕️</div>
+</div>
+
+<div class="main" style="max-width:1020px;width:100%;margin:0 auto">
+  <div class="steps">
+    <div class="step"><div class="step-circle done">✓</div><span class="step-label">Account</span></div>
+    <div class="step-line done"></div>
+    <div class="step"><div class="step-circle done">✓</div><span class="step-label">Location</span></div>
+    <div class="step-line done"></div>
+    <div class="step"><div class="step-circle done">✓</div><span class="step-label">Clinic Details</span></div>
+    <div class="step-line done"></div>
+    <div class="step"><div class="step-circle active">4</div><span class="step-label">Choose Plan</span></div>
+  </div>
+
+  <div class="card" style="max-width:none">
+    <div class="card-header">
+      <div class="card-icon">💳</div>
+      <div>
+        <h2>Choose your plan</h2>
+        <p>{% if current %}You're on the <strong>{{ current.plan.plan_name }}</strong> plan until {{ current.end_date|date:"d M Y" }}.{% else %}Pick a plan to go live. You can change it any time.{% endif %}</p>
+      </div>
+    </div>
+
+    <div class="plans-grid">
+      {% for plan in plans %}
+      <div class="plan-card{% if plan.is_featured %} featured{% endif %}{% if current and current.plan_id == plan.id %} current{% endif %}">
+        {% if plan.is_featured %}<span class="plan-tag">Most popular</span>{% endif %}
+        <div class="plan-name">{{ plan.plan_name }}</div>
+        <div class="plan-price">{% if plan.price %}₹{{ plan.price|floatformat:"0g" }}{% else %}Free{% endif %} <span>/ {{ plan.duration_days }} days</span></div>
+        <ul class="plan-features">
+          {% for feature in plan.feature_list %}<li>{{ feature }}</li>{% endfor %}
+        </ul>
+        <form method="POST">{% csrf_token %}
+          <input type="hidden" name="plan_id" value="{{ plan.id }}">
+          <button type="submit" class="btn-primary">{% if current and current.plan_id == plan.id %}Renew {{ plan.plan_name }}{% else %}Choose {{ plan.plan_name }} →{% endif %}</button>
+        </form>
+      </div>
+      {% empty %}
+      <p>No plans available yet. An admin can add them at /admin/.</p>
+      {% endfor %}
+    </div>
+    <a class="back-link" href="{% url 'doctors:dashboard' %}">Skip for now → go to dashboard</a>
+  </div>
+</div>
+{% endblock %}
