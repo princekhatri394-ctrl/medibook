@@ -27,3 +27,15 @@ services:
         value: ".onrender.com"
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
         value: "https://*.onrender.com"
+      # Admin account for /admin/ (Render asks you to type these during setup)
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      - key: DJANGO_SUPERUSER_NAME
+        value: Admin
+      - key: DJANGO_SUPERUSER_PHONE
+        value: "0000000000"
+      # 1 = add demo doctors + patient (password demo1234), no demo admin
+      - key: SEED_DEMO
+        value: "1"

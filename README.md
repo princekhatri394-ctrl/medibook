@@ -94,7 +94,7 @@ Production checklist (all done through environment variables, no code changes):
 
 CSS is served by WhiteNoise, so no separate web server config is needed.
 
-**Render (free):** push the project to GitHub, then Render Dashboard -> New -> Blueprint -> choose the repo. `render.yaml` creates the web service and a PostgreSQL database and sets all variables. After the first deploy, open the Render Shell and run `python manage.py createsuperuser` (and optionally `python manage.py seed_demo`).
+**Render (free):** push the project to GitHub, then Render Dashboard -> New -> Blueprint -> choose the repo. `render.yaml` creates the web service and a PostgreSQL database and sets all variables. During setup Render asks for `DJANGO_SUPERUSER_EMAIL` and `DJANGO_SUPERUSER_PASSWORD`; `build.sh` creates that admin account. `SEED_DEMO=1` adds the demo doctors and patient (no demo admin). Set it to `0` in Render's Environment tab to stop that.
 
 **PythonAnywhere (free):** upload the zip, create a virtualenv and `pip install -r requirements.txt`, add a "Manual configuration" web app pointing its WSGI file to `medibook.wsgi`, set the environment variables above in the WSGI file, map `/static/` to the `staticfiles` folder, then run `python manage.py collectstatic` and `python manage.py migrate`.
 

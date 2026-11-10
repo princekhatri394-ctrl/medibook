@@ -17,8 +17,12 @@ DOCTORS = [
 class Command(BaseCommand):
     help = "Create demo admin, doctors and a patient (password: demo1234)."
 
+    def add_arguments(self, parser):
+        parser.add_argument("--skip-admin", action="store_true",
+                            help="Don't create the demo admin (use on public sites).")
+
     def handle(self, *args, **options):
-        if not User.objects.filter(email="admin@medibook.test").exists():
+        if not options["skip_admin"] and not User.objects.filter(email="admin@medibook.test").exists():
             User.objects.create_superuser("admin@medibook.test", "demo1234", name="Admin", phone="0000000000")
         for name, email, spec, exp, fees, clinic, city, area in DOCTORS:
             if User.objects.filter(email=email).exists():
