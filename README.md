@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # MediBook (Django)
 
 Hospital / doctor appointment booking system, migrated from plain PHP + MySQL to **Python + Django 4.2**.
@@ -87,3 +88,7 @@ python manage.py migrate
 ```bash
 python manage.py test tests
 ```
+=======
+# medibook-
+Doctor appointment booking system , it contains dual log in system for both doctor and paitent
+>>>>>>> 23413a91a2d1e20d1410111b38677dd3831e3968
