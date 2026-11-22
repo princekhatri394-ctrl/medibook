@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Register — MediBook{% endblock %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/accounts_register.css' %}">{% endblock %}
+{% block body %}
+
+<!-- LEFT -->
+<div class="left">
+  <div class="brand">
+    <div class="brand-icon">🏥</div>
+    <span class="brand-name">MediBook</span>
+  </div>
+
+  <div class="left-content">
+    <h1>Join <em>thousands</em><br>of patients &<br>doctors today</h1>
+  </div>
+
+  <div class="perks">
+    <div class="perk">
+      <div class="perk-icon">🔍</div>
+      <div>
+        <h4>Find Specialists Easily</h4>
+        <p>Browse verified doctors by specialization, ratings, and availability.</p>
+      </div>
+    </div>
+    <div class="perk">
+      <div class="perk-icon">📅</div>
+      <div>
+        <h4>Instant Booking</h4>
+        <p>Book same-day appointments with real-time slot availability.</p>
+      </div>
+    </div>
+    <div class="perk">
+      <div class="perk-icon">💼</div>
+      <div>
+        <h4>Grow Your Practice</h4>
+        <p>Doctors get listed, manage slots & access patient analytics.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+  <div class="form-box">
+    <h2>Create Account</h2>
+    <p>Already registered? <a href="{% url 'accounts:login' %}">Sign in here</a></p>
+
+    {% if error %}<div class="alert-error">⚠️ {{ error }}</div>{% endif %}
+    {% if success %}<div class="alert-success">✅ {{ success }}</div>{% endif %}
+
+    <form method="POST" action="">{% csrf_token %}
+      <input type="hidden" name="role" id="roleInput" value="patient">
+
+      <!-- Role buttons -->
+      <div class="role-select">
+        <div class="role-btn active" onclick="setRole('patient', this)">
+          <span>🧑‍⚕️</span><p>Patient</p>
+        </div>
+        <div class="role-btn" onclick="setRole('doctor', this)">
+          <span>👨‍⚕️</span><p>Doctor</p>
+        </div>
+      </div>
+
+      <!-- Fields grid -->
+      <div class="form-grid">
+
+        <!-- Full Name -->
+        <div class="form-group full">
+          <label>Full Name</label>
+          <div class="input-wrap">
+            <span class="icon">👤</span>
+            <input type="text" name="name" placeholder="Dr. / Mr. / Ms. Your Name"
+                   value="{{ values.name }}" required>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group full">
+          <label>Email Address</label>
+          <div class="input-wrap">
+            <span class="icon">✉️</span>
+            <input type="email" name="email" placeholder="you@example.com"
+                   value="{{ values.email }}" required>
+          </div>
+        </div>
+
+        <!-- Phone -->
+        <div class="form-group">
+          <label>Phone Number</label>
+          <div class="input-wrap">
+            <span class="icon">📱</span>
+            <input type="tel" name="phone" placeholder="+91 98765 43210"
+                   value="{{ values.phone }}" required>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-wrap">
+            <span class="icon">🔒</span>
+            <input type="password" name="password" id="passInput" placeholder="Min. 6 characters" required>
+            <span class="toggle-pass" onclick="togglePass('passInput')">👁️</span>
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group full">
+          <label>Confirm Password</label>
+          <div class="input-wrap">
+            <span class="icon">🔒</span>
+            <input type="password" name="confirm_password" id="confirmInput" placeholder="Re-enter password" required>
+            <span class="toggle-pass" onclick="togglePass('confirmInput')">👁️</span>
+          </div>
+        </div>
+
+        <!-- Doctor-only fields -->
+        <div id="doctorFields" class="doctor-fields">
+          <div class="section-title">Doctor Details</div>
+
+          <div class="form-group full">
+            <label>Specialization</label>
+            <div class="input-wrap">
+              <span class="icon">🩺</span>
+              <select name="specialization">
+                <option value="">-- Select Specialization --</option>
+                <option>Cardiologist</option>
+                <option>Dermatologist</option>
+                <option>Neurologist</option>
+                <option>Orthopedic</option>
+                <option>Pediatrician</option>
+                <option>Psychiatrist</option>
+                <option>General Physician</option>
+                <option>Gynecologist</option>
+                <option>Ophthalmologist</option>
+                <option>ENT Specialist</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Experience (Years)</label>
+            <div class="input-wrap">
+              <span class="icon">📋</span>
+              <input type="number" name="experience" placeholder="e.g. 5" min="0" max="60">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Consultation Fee (₹)</label>
+            <div class="input-wrap">
+              <span class="icon">💰</span>
+              <input type="number" name="fees" placeholder="e.g. 500" min="0">
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /form-grid -->
+
+      <button type="submit" class="btn-primary">Create Account →</button>
+
+      <p class="terms">
+        By registering, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+  function setRole(role, el) {
+    document.getElementById('roleInput').value = role;
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+
+    const df = document.getElementById('doctorFields');
+    df.classList.toggle('show', role === 'doctor');
+  }
+
+  function togglePass(id) {
+    const inp = document.getElementById(id);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+  {% if values.role == 'doctor' %}setRole('doctor', document.querySelectorAll('.role-btn')[1]);{% endif %}
+</script>
+{% endblock %}

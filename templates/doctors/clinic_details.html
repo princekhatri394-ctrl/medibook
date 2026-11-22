@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Clinic Details — MediBook{% endblock %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/doctors_clinic_details.css' %}">{% endblock %}
+{% block body %}
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🏥</div>
+    <span class="brand-name">MediBook</span>
+  </div>
+  <div class="user-greet">
+    Dr. <span>{{ user.name }}</span> 👨‍⚕️
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-circle done">✓</div>
+      <span class="step-label">Account</span>
+    </div>
+    <div class="step-line done"></div>
+    <div class="step">
+      <div class="step-circle done">✓</div>
+      <span class="step-label">Location</span>
+    </div>
+    <div class="step-line done"></div>
+    <div class="step">
+      <div class="step-circle active">3</div>
+      <span class="step-label">Clinic Details</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-circle inactive">4</div>
+      <span class="step-label inactive">Choose Plan</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">🏨</div>
+      <div>
+        <h2>Clinic Details</h2>
+        <p>Help patients know your clinic — name, address, description and working hours.</p>
+      </div>
+    </div>
+
+    {% if error %}
+      <div class="alert-error">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="">{% csrf_token %}
+
+      <!-- BASIC INFO -->
+      <div class="section-divider">🏥 Basic Information</div>
+
+      <div class="form-group">
+        <label class="field-label">Clinic / Hospital Name *</label>
+        <div class="input-wrap">
+          <span class="ico">🏥</span>
+          <input type="text" name="clinic_name"
+                 placeholder="e.g. City Care Clinic, Apollo Hospital"
+                 value="{{ values.clinic_name }}" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="field-label">Clinic Address *</label>
+        <div class="input-wrap">
+          <span class="ico">📍</span>
+          <input type="text" name="clinic_address"
+                 placeholder="e.g. Shop 4, Sai Plaza, FC Road, Pune - 411005"
+                 value="{{ values.clinic_address }}" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="field-label">
+          Clinic Description
+          <span class="optional">(optional)</span>
+        </label>
+        <div class="input-wrap top">
+          <span class="ico">📝</span>
+          <textarea name="clinic_desc" id="clinicDesc" maxlength="300"
+                    placeholder="Tell patients about your clinic — facilities, specialties, what makes your practice special..."
+                    oninput="updateCount(this)">{{ values.clinic_desc }}</textarea>
+        </div>
+        <div class="char-count"><span id="charCount">0</span> / 300</div>
+      </div>
+
+      <!-- OFFICE TIMINGS -->
+      <div class="section-divider">🕐 Office Timings</div>
+
+      <div class="preset-label">Quick presets:</div>
+      <div class="presets">
+        <div class="preset-btn" onclick="applyPreset('weekdays')">📅 Mon–Fri (9am–6pm)</div>
+        <div class="preset-btn" onclick="applyPreset('everyday')">🗓️ Everyday (10am–8pm)</div>
+        <div class="preset-btn" onclick="applyPreset('morning')">🌅 Morning only (8am–1pm)</div>
+        <div class="preset-btn" onclick="applyPreset('clear')">✕ Clear all</div>
+      </div>
+
+      <table class="days-table">
+        <thead>
+          <tr>
+            <th style="width:140px">Day</th>
+            <th>Open Time</th>
+            <th>Close Time</th>
+          </tr>
+        </thead>
+        <tbody id="daysBody"></tbody>
+      </table>
+
+      <button type="submit" class="btn-primary">Save & Continue →</button>
+    </form>
+  </div>
+</div>
+
+{{ timings|json_script:"existing-timings" }}
+<script>
+  const days = [
+    {key:'Mon',label:'Monday'},{key:'Tue',label:'Tuesday'},
+    {key:'Wed',label:'Wednesday'},{key:'Thu',label:'Thursday'},
+    {key:'Fri',label:'Friday'},{key:'Sat',label:'Saturday'},
+    {key:'Sun',label:'Sunday'},
+  ];
+
+  const timeOptions = [
+    '6:00 AM','6:30 AM','7:00 AM','7:30 AM','8:00 AM','8:30 AM',
+    '9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM',
+    '12:00 PM','12:30 PM','1:00 PM','1:30 PM','2:00 PM','2:30 PM',
+    '3:00 PM','3:30 PM','4:00 PM','4:30 PM','5:00 PM','5:30 PM',
+    '6:00 PM','6:30 PM','7:00 PM','7:30 PM','8:00 PM','8:30 PM',
+    '9:00 PM','9:30 PM','10:00 PM'
+  ];
+
+  function buildTimeSelect(name, defaultVal, disabled) {
+    const sel = document.createElement('select');
+    sel.name = name; sel.id = name;
+    sel.className = 'time-sel'; sel.disabled = disabled;
+    timeOptions.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t; opt.textContent = t;
+      if (t === defaultVal) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    return sel;
+  }
+
+  function buildRows() {
+    const tbody = document.getElementById('daysBody');
+    tbody.innerHTML = '';
+    days.forEach(d => {
+      const tr = document.createElement('tr');
+      tr.className = 'day-row';
+
+      const tdDay = document.createElement('td');
+      const wrap  = document.createElement('div');
+      wrap.className = 'day-toggle';
+
+      const chk = document.createElement('input');
+      chk.type = 'checkbox'; chk.name = 'day_' + d.key;
+      chk.id = 'chk_' + d.key; chk.className = 'toggle-checkbox';
+      chk.addEventListener('change', () => toggleDay(d.key));
+
+      const lbl = document.createElement('label');
+      lbl.htmlFor = 'chk_' + d.key; lbl.className = 'toggle-label';
+
+      const span = document.createElement('span');
+      span.className = 'day-name'; span.textContent = d.label;
+
+      wrap.appendChild(chk); wrap.appendChild(lbl); wrap.appendChild(span);
+      tdDay.appendChild(wrap);
+
+      const tdOpen = document.createElement('td');
+      const ow = document.createElement('div');
+      ow.className = 'time-fields';
+      ow.appendChild(buildTimeSelect('open_' + d.key, '9:00 AM', true));
+      tdOpen.appendChild(ow);
+
+      const tdClose = document.createElement('td');
+      const cw = document.createElement('div');
+      cw.className = 'time-fields';
+      cw.appendChild(buildTimeSelect('close_' + d.key, '6:00 PM', true));
+      tdClose.appendChild(cw);
+
+      tr.appendChild(tdDay); tr.appendChild(tdOpen); tr.appendChild(tdClose);
+      tbody.appendChild(tr);
+    });
+  }
+
+  function toggleDay(key) {
+    const chk   = document.getElementById('chk_' + key);
+    const open  = document.getElementById('open_' + key);
+    const close = document.getElementById('close_' + key);
+    open.disabled = close.disabled = !chk.checked;
+  }
+
+  function setDay(key, openVal, closeVal, checked) {
+    const chk   = document.getElementById('chk_' + key);
+    const open  = document.getElementById('open_' + key);
+    const close = document.getElementById('close_' + key);
+    chk.checked = checked;
+    open.disabled = close.disabled = !checked;
+    if (openVal)  for (let o of open.options)  if (o.value === openVal)  o.selected = true;
+    if (closeVal) for (let o of close.options) if (o.value === closeVal) o.selected = true;
+  }
+
+  function applyPreset(type) {
+    if      (type === 'weekdays') {
+      ['Mon','Tue','Wed','Thu','Fri'].forEach(d => setDay(d,'9:00 AM','6:00 PM',true));
+      ['Sat','Sun'].forEach(d => setDay(d,'9:00 AM','6:00 PM',false));
+    }
+    else if (type === 'everyday') days.forEach(d => setDay(d.key,'10:00 AM','8:00 PM',true));
+    else if (type === 'morning')  days.forEach(d => setDay(d.key,'8:00 AM','1:00 PM',true));
+    else if (type === 'clear')    days.forEach(d => setDay(d.key,'9:00 AM','6:00 PM',false));
+  }
+
+  function updateCount(el) {
+    document.getElementById('charCount').textContent = el.value.length;
+  }
+
+  buildRows();
+  Object.entries(JSON.parse(document.getElementById('existing-timings').textContent)).forEach(([day, range]) => {
+    const [open, close] = range.split(' - ');
+    setDay(day, open, close, true);
+  });
+  const desc = document.getElementById('clinicDesc');
+  if (desc) document.getElementById('charCount').textContent = desc.value.length;
+</script>
+{% endblock %}

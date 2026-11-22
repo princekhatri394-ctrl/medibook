@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Book Appointment — MediBook{% endblock %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/patients_book_appointment.css' %}">{% endblock %}
+{% block body %}
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🏥</div>
+    <span class="brand-name">MediBook</span>
+  </div>
+  <a href="{% url 'patients:dashboard' %}?tab=doctors" class="back-btn">← Back to Doctors</a>
+</div>
+
+<div class="main">
+
+  <!-- LEFT: BOOKING FORM -->
+  <div class="booking-card">
+
+    {% if success %}
+    <!-- SUCCESS SCREEN -->
+    <div class="success-screen">
+      <div class="success-circle">✅</div>
+      <h2>Appointment Booked!</h2>
+      <p>Your appointment with Dr. {{ doctor.name }} has been requested. You'll be confirmed shortly.</p>
+      <a href="{% url 'patients:dashboard' %}?tab=appointments" class="btn-back">View My Appointments →</a>
+    </div>
+
+    {% else %}
+
+    <h2>Book Appointment</h2>
+    <p>Select a date and available time slot</p>
+
+    {% if error %}
+      <div class="alert-error">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" id="bookingForm">{% csrf_token %}
+      <input type="hidden" name="appointment_date" id="selectedDate" value="">
+      <input type="hidden" name="time_slot"         id="selectedSlot" value="">
+
+      <!-- STEP 1: Date -->
+      <div class="calendar-wrap">
+        <div class="section-label">Step 1 — Select Date</div>
+        <div class="cal-header">
+          <button type="button" class="cal-nav" onclick="changeMonth(-1)">‹</button>
+          <div class="cal-title" id="calTitle"></div>
+          <button type="button" class="cal-nav" onclick="changeMonth(1)">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+
+      <!-- STEP 2: Time Slot -->
+      <div class="slots-section">
+        <div class="section-label">Step 2 — Select Time Slot</div>
+        <div class="slots-legend">
+          <div class="legend-item"><div class="legend-dot available"></div> Available</div>
+          <div class="legend-item"><div class="legend-dot booked"></div> Booked</div>
+          <div class="legend-item"><div class="legend-dot selected"></div> Your Selection</div>
+        </div>
+        <div id="slotsContainer">
+          <div class="no-date-msg">📅 Please select a date first</div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Reason -->
+      <div class="reason-section">
+        <div class="section-label">Step 3 — Reason for Visit <span style="font-weight:400;text-transform:none;color:var(--gray)">(optional)</span></div>
+        <textarea name="reason" placeholder="e.g. Fever and headache since 2 days, routine checkup, follow-up visit..."></textarea>
+      </div>
+
+      <!-- Summary -->
+      <div class="summary-box" id="summaryBox">
+        <div class="summary-row">
+          <span>Doctor</span>
+          <span>Dr. {{ doctor.name }}</span>
+        </div>
+        <div class="summary-row">
+          <span>Date</span>
+          <span id="summaryDate">—</span>
+        </div>
+        <div class="summary-row">
+          <span>Time</span>
+          <span id="summaryTime">—</span>
+        </div>
+        <div class="summary-row">
+          <span>Fee</span>
+          <span>₹{{ doctor.fees|floatformat:"0g" }}</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-book" id="bookBtn">
+        Confirm Appointment →
+      </button>
+    </form>
+
+    {% endif %}
+  </div>
+
+  <!-- RIGHT: DOCTOR INFO -->
+  <div class="doctor-card">
+    <div class="doc-top">
+      <div class="doc-avatar">{{ doctor.name|first|upper }}</div>
+      <div>
+        <div class="doc-name">Dr. {{ doctor.name }}</div>
+        <div class="doc-spec">{{ doctor.specialization|default:"General" }}</div>
+        <div class="doc-exp">🏅 {{ doctor.experience }} years experience</div>
+      </div>
+    </div>
+
+    <div class="doc-details">
+      {% if doctor.clinic_name %}
+      <div class="doc-detail">🏥 <strong>{{ doctor.clinic_name }}</strong></div>
+      {% endif %}
+      {% if doctor.clinic_address %}
+      <div class="doc-detail">📍 {{ doctor.clinic_address }}</div>
+      {% endif %}
+      {% if doctor.clinic_city %}
+      <div class="doc-detail">🌆 {% if doctor.clinic_area %}{{ doctor.clinic_area }}, {% endif %}{{ doctor.clinic_city }}</div>
+      {% endif %}
+      <div class="doc-detail">📱 {{ doctor.phone }}</div>
+    </div>
+
+    <div class="fee-box">
+      <div class="fee-label">Consultation Fee</div>
+      <div class="fee-amount">₹{{ doctor.fees|floatformat:"0g" }}</div>
+      <div class="fee-per">per visit</div>
+    </div>
+
+    {% if timings %}
+    <div class="timings-section">
+      <div class="timings-label">Working Hours</div>
+      {% for d, value in timing_rows %}
+      <div class="timing-row">
+        <span class="timing-day">{{ d }}</span>
+        {% if value %}
+          <span class="timing-val">⏰ {{ value }}</span>
+        {% else %}
+          <span class="timing-closed">Closed</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{{ timings|json_script:"doc-timings" }}
+{% if not success %}
+<script>
+  const docTimings = JSON.parse(document.getElementById('doc-timings').textContent);
+  const slotsUrl   = "{% url 'patients:booked_slots' doctor.id %}";
+
+  let currentYear  = new Date().getFullYear();
+  let currentMonth = new Date().getMonth();
+  let selectedDate = '';
+  let selectedSlot = '';
+
+  const dayMap = {0:'Sun',1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat'};
+  const months = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+
+  // ── Generate 30-min slots between open and close time ──
+  function generateSlots(timeRange) {
+    if (!timeRange) return [];
+    const [open, close] = timeRange.split(' - ');
+    const slots = [];
+    let cur = parseTime(open);
+    const end = parseTime(close);
+    while (cur < end) {
+      slots.push(formatTime(cur));
+      cur += 30;
+    }
+    return slots;
+  }
+
+  function parseTime(str) {
+    // e.g. "9:00 AM" → minutes from midnight
+    const [time, period] = str.trim().split(' ');
+    let [h, m] = time.split(':').map(Number);
+    if (period === 'PM' && h !== 12) h += 12;
+    if (period === 'AM' && h === 12) h = 0;
+    return h * 60 + m;
+  }
+
+  function formatTime(mins) {
+    let h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const period = h >= 12 ? 'PM' : 'AM';
+    if (h > 12) h -= 12;
+    if (h === 0) h = 12;
+    return `${h}:${m.toString().padStart(2,'0')} ${period}`;
+  }
+
+  function formatTimeForDB(display) {
+    // Convert "9:00 AM" to "09:00:00" for MySQL
+    const mins = parseTime(display);
+    const h = Math.floor(mins/60).toString().padStart(2,'0');
+    const m = (mins%60).toString().padStart(2,'0');
+    return `${h}:${m}:00`;
+  }
+
+  // ── Build calendar ──
+  function buildCalendar() {
+    const title = document.getElementById('calTitle');
+    const grid  = document.getElementById('calGrid');
+    title.textContent = `${months[currentMonth]} ${currentYear}`;
+    grid.innerHTML = '';
+
+    // Day headers
+    ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-day-header'; el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    // Empty cells
+    for (let i = 0; i < firstDay; i++) {
+      const el = document.createElement('div');
+      el.className = 'cal-day empty'; grid.appendChild(el);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date    = new Date(currentYear, currentMonth, day);
+      const dayKey  = dayMap[date.getDay()];
+      const isPast  = date < today;
+      const isOpen  = docTimings[dayKey] !== undefined;
+      const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const isToday = date.toDateString() === today.toDateString();
+
+      const el = document.createElement('div');
+      el.textContent = day;
+
+      if (isPast)       el.className = 'cal-day past';
+      else if (!isOpen) el.className = 'cal-day closed';
+      else {
+        el.className = 'cal-day available';
+        if (isToday) el.classList.add('today');
+        if (dateStr === selectedDate) el.classList.add('selected');
+        el.onclick = () => selectDate(dateStr, el);
+      }
+
+      grid.appendChild(el);
+    }
+  }
+
+  function changeMonth(dir) {
+    currentMonth += dir;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
+    buildCalendar();
+  }
+
+  // ── Select date ──
+  function selectDate(dateStr, el) {
+    selectedDate = dateStr;
+    selectedSlot = '';
+    document.getElementById('selectedDate').value = dateStr;
+    document.getElementById('selectedSlot').value = '';
+
+    // Highlight calendar
+    document.querySelectorAll('.cal-day.available').forEach(d => d.classList.remove('selected'));
+    el.classList.add('selected');
+
+    // Update summary
+    const d = new Date(dateStr + 'T00:00:00');
+    document.getElementById('summaryDate').textContent =
+      d.toLocaleDateString('en-IN', {weekday:'short', day:'numeric', month:'long', year:'numeric'});
+
+    // Load slots
+    loadSlots(dateStr);
+    updateBookBtn();
+  }
+
+  // ── Load slots via AJAX ──
+  function loadSlots(dateStr) {
+    const date    = new Date(dateStr + 'T00:00:00');
+    const dayKey  = dayMap[date.getDay()];
+    const timing  = docTimings[dayKey];
+
+    if (!timing) {
+      document.getElementById('slotsContainer').innerHTML =
+        '<div class="no-date-msg">❌ Doctor is closed on this day</div>';
+      return;
+    }
+
+    const allSlots = generateSlots(timing);
+    document.getElementById('slotsContainer').innerHTML =
+      '<div class="slots-loading">Loading slots...</div>';
+
+    fetch(`${slotsUrl}?date=${dateStr}`)
+      .then(r => r.json())
+      .then(booked => renderSlots(allSlots, booked))
+      .catch(() => renderSlots(allSlots, []));
+  }
+
+  // ── Render time slots ──
+  function renderSlots(allSlots, booked) {
+    if (allSlots.length === 0) {
+      document.getElementById('slotsContainer').innerHTML =
+        '<div class="no-date-msg">No slots available</div>';
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'slots-grid';
+
+    allSlots.forEach(slot => {
+      const dbSlot = formatTimeForDB(slot);
+      const isBooked = booked.some(b => b.substring(0,5) === dbSlot.substring(0,5)) || isPastSlot(dbSlot);
+
+      const el = document.createElement('div');
+      el.className = 'slot' + (isBooked ? ' booked' : '');
+      el.textContent = slot;
+
+      if (!isBooked) {
+        el.onclick = () => selectSlot(slot, dbSlot, el);
+      }
+
+      grid.appendChild(el);
+    });
+
+    document.getElementById('slotsContainer').innerHTML = '';
+    document.getElementById('slotsContainer').appendChild(grid);
+  }
+
+  function isPastSlot(dbSlot) {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    if (selectedDate !== todayStr) return false;
+    const [h, m] = dbSlot.split(':').map(Number);
+    return h * 60 + m <= now.getHours() * 60 + now.getMinutes();
+  }
+  // ── Select slot ──
+  function selectSlot(displaySlot, dbSlot, el) {
+    selectedSlot = dbSlot;
+    document.getElementById('selectedSlot').value = dbSlot;
+    document.querySelectorAll('.slot:not(.booked)').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('summaryTime').textContent = displaySlot;
+    document.getElementById('summaryBox').classList.add('show');
+    updateBookBtn();
+  }
+
+  function updateBookBtn() {
+    const btn = document.getElementById('bookBtn');
+    if (selectedDate && selectedSlot) {
+      btn.classList.add('ready');
+    } else {
+      btn.classList.remove('ready');
+    }
+  }
+
+  // Init calendar
+  buildCalendar();
+</script>
+{% endif %}
+{% endblock %}

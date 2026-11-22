@@ -1,0 +1,27 @@
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+.form-grid-2 .full { grid-column: 1 / -1; }
+.field-input input, .field-input select, .field-input textarea {
+  width: 100%; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 12px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.92rem; color: var(--navy, #0b1e3d);
+  background: #fff; outline: none; transition: border-color 0.2s;
+}
+.field-input textarea { min-height: 90px; resize: vertical; }
+.field-input input:focus, .field-input select:focus, .field-input textarea:focus { border-color: var(--teal, #0d7c73); }
+.back-link { display: inline-block; margin-top: 14px; color: var(--gray, #8a95a3); font-size: 0.88rem; text-decoration: none; }
+.back-link:hover { color: var(--teal, #0d7c73); }
+
+.plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-top: 8px; }
+.plan-card { position: relative; border: 2px solid #e2e8f0; border-radius: 16px; padding: 24px 20px;
+  display: flex; flex-direction: column; background: #fff; transition: all 0.2s; }
+.plan-card:hover { border-color: var(--teal, #0d7c73); transform: translateY(-2px); }
+.plan-card.featured { border-color: var(--teal, #0d7c73); box-shadow: 0 10px 30px rgba(13,124,115,0.12); }
+.plan-card.current { background: rgba(13,124,115,0.04); }
+.plan-tag { position: absolute; top: -11px; left: 20px; background: var(--teal, #0d7c73); color: #fff;
+  font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.4px; }
+.plan-name { font-family: 'Instrument Serif', serif; font-size: 1.5rem; color: var(--navy, #0b1e3d); }
+.plan-price { font-size: 1.8rem; font-weight: 700; color: var(--navy, #0b1e3d); margin: 6px 0 2px; }
+.plan-price span { font-size: 0.8rem; font-weight: 400; color: var(--gray, #8a95a3); }
+.plan-features { list-style: none; margin: 14px 0 18px; padding: 0; flex: 1; }
+.plan-features li { font-size: 0.85rem; color: #4a5568; padding: 5px 0; }
+.plan-features li::before { content: '✓ '; color: var(--teal, #0d7c73); font-weight: 700; }
+.plan-card .btn-primary { margin-top: auto; }
