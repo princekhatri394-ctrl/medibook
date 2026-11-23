@@ -32,7 +32,11 @@ python manage.py migrate
 python manage.py seed_demo        # optional demo data
 python manage.py runserver
 ```
+<<<<<<< HEAD
 Open: [medibook](https://medibook-wbq7.onrender.com/)
+=======
+Open https://medibook-wbq7.onrender.com
+>>>>>>> 72e3032375adcae572675199c4a7713327f1692d
 
 Demo accounts (password `demo1234` for all):
 | Role | Email |
@@ -63,18 +67,29 @@ python manage.py migrate
 
 ## URL map (old PHP → new Django)
 | Django |
-|---|---|
+
 | /auth/login/ |
+
 | /auth/register/ |
+
 | /auth/logout/ |
+
 | /patient/location/ |
+
 | /patient/dashboard/ |
+
 | /patient/book/N/ |
+
 | /doctor/location/ |
+
 | /doctor/clinic-details/ |
+
 | /doctor/select-plan/ |
+
 | /doctor/dashboard/ |
+
 | /patient/edit-profile/, /doctor/edit-profile/ |
+
 | /admin/ |
 
 ## Tests
