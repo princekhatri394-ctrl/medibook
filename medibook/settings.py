@@ -1,7 +1,7 @@
 """Django settings for the MediBook project."""
 import os
-import dj_database_url
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
