@@ -64,18 +64,29 @@ python manage.py migrate
 
 ## URL map (old PHP → new Django)
 | Django |
-|---|---|
+
 | /auth/login/ |
+
 | /auth/register/ |
+
 | /auth/logout/ |
+
 | /patient/location/ |
+
 | /patient/dashboard/ |
+
 | /patient/book/N/ |
+
 | /doctor/location/ |
+
 | /doctor/clinic-details/ |
+
 | /doctor/select-plan/ |
+
 | /doctor/dashboard/ |
+
 | /patient/edit-profile/, /doctor/edit-profile/ |
+
 | /admin/ |
 
 ## Tests
