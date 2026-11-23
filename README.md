@@ -33,6 +33,7 @@ python manage.py seed_demo        # optional demo data
 python manage.py runserver
 ```
 Open http://127.0.0.1:8000/
+https://medibook-wbq7.onrender.com
 
 Demo accounts (password `demo1234` for all):
 | Role | Email |
