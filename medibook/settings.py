@@ -1,5 +1,6 @@
 """Django settings for the MediBook project."""
 import os
+import dj_database_url
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,6 +28,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -57,7 +59,12 @@ WSGI_APPLICATION = "medibook.wsgi.application"
 
 # SQLite by default. Set DB_ENGINE=mysql (plus DB_NAME/DB_USER/DB_PASSWORD/DB_HOST/DB_PORT)
 # to use MySQL / MariaDB instead.
-if os.environ.get("DB_ENGINE", "sqlite") == "mysql":
+if os.environ.get("DATABASE_URL"):
+    # Render + Neon (PostgreSQL)
+    DATABASES = {
+        "default": dj_database_url.config(conn_max_age=600, ssl_require=True)
+    }
+elif os.environ.get("DB_ENGINE", "sqlite") == "mysql":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
@@ -69,7 +76,6 @@ if os.environ.get("DB_ENGINE", "sqlite") == "mysql":
             "OPTIONS": {"charset": "utf8mb4"},
         }
     }
-    # MySQL ignores conditional unique constraints; booking is also guarded in the view.
     SILENCED_SYSTEM_CHECKS = ["models.W036"]
 else:
     DATABASES = {
@@ -99,5 +105,10 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
