@@ -11,13 +11,6 @@ The pages keep the original look (same HTML/CSS), but all backend logic is now D
 - **Plans** – Basic / Standard / Premium are seeded automatically by a migration.
 - **Admin** – Django admin at `/admin/` replaces the old missing `admin/dashboard.php`.
 
-## What was fixed compared to the PHP version
-- Django ORM instead of string-built SQL; CSRF protection on every form; session is rotated on login.
-- Passwords hashed with Django's hasher.
-- Booking rejects past dates/times, days the doctor is closed, slots outside office hours, and double bookings (also enforced by a DB unique constraint).
-- Doctor status updates accept only pending / confirmed / completed / cancelled, and only for the doctor's own appointments. Patients can only cancel their own appointments.
-- Missing pages added: plan selection, edit profile (both roles), landing redirect, admin.
-- Registration now leads into the location step; patient location is stored in the `patients` table.
 
 ## Project layout
 ```
@@ -69,20 +62,20 @@ python manage.py migrate
 | `DB_ENGINE` | `sqlite` | `mysql` to use MySQL/MariaDB |
 
 ## URL map (old PHP → new Django)
-| PHP | Django |
+| Django |
 |---|---|
-| auth/login.php | /auth/login/ |
-| auth/register.php | /auth/register/ |
-| auth/logout.php | /auth/logout/ |
-| patient/location.php | /patient/location/ |
-| patient/dashboard.php | /patient/dashboard/ |
-| patient/book-appointment.php?doctor_id=N | /patient/book/N/ |
-| doctor/select-location.php | /doctor/location/ |
-| doctor/clinic-details.php | /doctor/clinic-details/ |
-| doctor/select-plan.php (was missing) | /doctor/select-plan/ |
-| doctor/dashboard.php | /doctor/dashboard/ |
-| */edit-profile.php (were missing) | /patient/edit-profile/, /doctor/edit-profile/ |
-| admin/dashboard.php (was missing) | /admin/ |
+| /auth/login/ |
+| /auth/register/ |
+| /auth/logout/ |
+| /patient/location/ |
+| /patient/dashboard/ |
+| /patient/book/N/ |
+| /doctor/location/ |
+| /doctor/clinic-details/ |
+| /doctor/select-plan/ |
+| /doctor/dashboard/ |
+| /patient/edit-profile/, /doctor/edit-profile/ |
+| /admin/ |
 
 ## Tests
 ```bash
