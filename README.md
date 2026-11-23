@@ -32,7 +32,7 @@ python manage.py migrate
 python manage.py seed_demo        # optional demo data
 python manage.py runserver
 ```
-Open http://127.0.0.1:8000/
+Open: [medibook](https://medibook-wbq7.onrender.com/)
 
 Demo accounts (password `demo1234` for all):
 | Role | Email |
