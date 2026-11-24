@@ -41,7 +41,6 @@ Open https://medibook-wbq7.onrender.com
 Demo accounts (password `demo1234` for all):
 | Role | Email |
 |---|---|
-| Admin | admin@medibook.test |
 | Doctor | priya@medibook.test, arjun@medibook.test, neha@medibook.test |
 | Patient | patient@medibook.test |
 
